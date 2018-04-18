@@ -1,0 +1,12 @@
+{
+    "name": "ipra/robots.loc",
+    "authors": [
+        {
+            "name": "Ilya Kapkov",
+            "email": "iprahtc2@gmail.com"
+        }
+    ],
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.2"
+    }
+}

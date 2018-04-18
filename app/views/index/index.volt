@@ -37,3 +37,4 @@
         </tbody>
     </table>
 {% endif %}
+{{ dump(test) }}

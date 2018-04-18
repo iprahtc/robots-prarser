@@ -13,8 +13,7 @@ class IndexController extends ControllerBase
     public function indexAction()
     {
         if ($this->request->isPost()) {
-
-            $url = $this->request->getPost("url");
+            $url = parse_url($this->request->getPost("url"))['host']. '/robots.txt';
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -24,6 +23,7 @@ class IndexController extends ControllerBase
             $header_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $size_file = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
             curl_close($ch);
+
 
             //Проверка наличия файла robots.txt
             $this->answer_array[1]['name'] = "Проверка наличия файла robots.txt";
@@ -43,6 +43,7 @@ class IndexController extends ControllerBase
 
             //Проверка количества директив Host, прописанных в файле
             $this->answer_array[3]['name'] = "Проверка количества директив Host, прописанных в файле";
+            $this->view->test = explode('\n', $data);
             if(substr_count(mb_strtolower($data), 'host') == 1){
                 $this->buildArray(3);
             }else
@@ -114,7 +115,7 @@ class IndexController extends ControllerBase
                 }else{
                     $this->answer_array[3]['status'] = 'error';
                     $this->answer_array[3]['situation'] = 'В файле прописано несколько директив Host';
-                    $this->answer_array[3]['recommendation'] = 'Программист: Директива Host должна быть указана в файле толоко 1 раз. Необходимо удалить все дополнительные директивы Host и оставить только 1, корректную и соответствующую основному зеркалу сайта';
+                    $this->answer_array[3]['recommendation'] = 'Программист: Директива Host должна быть указана в файле только 1 раз. Необходимо удалить все дополнительные директивы Host и оставить только 1, корректную и соответствующую основному зеркалу сайта';
                 }
                 break;
             case 4:

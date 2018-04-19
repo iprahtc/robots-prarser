@@ -1,5 +1,8 @@
 <?php
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 class IndexController extends ControllerBase
 {
     //массив последовательности обработки
@@ -13,7 +16,8 @@ class IndexController extends ControllerBase
     public function indexAction()
     {
         if ($this->request->isPost()) {
-            $url = parse_url($this->request->getPost("url"))['host']. '/robots.txt';
+
+            $url = $this->request->getPost("url");
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -23,7 +27,6 @@ class IndexController extends ControllerBase
             $header_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $size_file = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
             curl_close($ch);
-
 
             //Проверка наличия файла robots.txt
             $this->answer_array[1]['name'] = "Проверка наличия файла robots.txt";
@@ -43,7 +46,6 @@ class IndexController extends ControllerBase
 
             //Проверка количества директив Host, прописанных в файле
             $this->answer_array[3]['name'] = "Проверка количества директив Host, прописанных в файле";
-            $this->view->test = explode('\n', $data);
             if(substr_count(mb_strtolower($data), 'host') == 1){
                 $this->buildArray(3);
             }else
@@ -74,7 +76,98 @@ class IndexController extends ControllerBase
                 $this->buildArray(6, false, $header_status);
 
             $this->view->answer_array = $this->answer_array;
+
+            //Формируем и сохраняем файл
+            $this->view->file_name = $this->buildXLSX($this->answer_array);
         }
+    }
+
+    /**
+     * @param data - array status
+     * @return string  - url
+     */
+    public function buildXLSX($data){
+
+        $extension = 'xlsx';
+        $file = uniqid() . '.' . $extension;
+        $path = 'files/';
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        //задаем значения
+        $sheet->setCellValue('A1', '№');
+        $sheet->setCellValue('B1', 'Название проекта');
+        $sheet->setCellValue('C1', 'Статус');
+        $sheet->setCellValue('E1', 'Текущее состояние');
+
+        //Задаем цвет
+        $sheet->getStyle('A1:E1')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('A2C4C9');
+        $sheet->getStyle('A2:E2')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('EFEFEF');
+
+        //Жирный текст
+        $sheet->getStyle('A1:E1')->getFont()->setBold(true);
+
+        //Выравнивание текста
+        $sheet->getStyle('A1:A50')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:A50')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('C1:C50')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('C1:C50')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('B1:B50')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('D1:D50')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('E1:E50')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('B1:B50')->getAlignment()->setWrapText(true);
+
+        //Ширина
+        $spreadsheet->getActiveSheet()->getColumnDimension('A')->setWidth(8);
+        $spreadsheet->getActiveSheet()->getColumnDimension('B')->setWidth(53);
+        $spreadsheet->getActiveSheet()->getColumnDimension('C')->setWidth(11);
+        $spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(15);
+        $spreadsheet->getActiveSheet()->getColumnDimension('E')->setWidth(65);
+
+        $iteration = 3;
+
+        foreach ($data as $i=>$v) {
+            //Заполнение полей
+            $sheet->setCellValue('A'.$iteration, $i);
+            $sheet->setCellValue('B'.$iteration, $v['name']);
+            $sheet->setCellValue('C' . $iteration, $v['status']);
+            if($v['status'] == 'ok') {
+                //Цвет для статуса ОК
+                $spreadsheet->getActiveSheet()->getStyle('C'. $iteration)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('93C47D');
+            }else{
+                //Цвет для статуса error
+                $spreadsheet->getActiveSheet()->getStyle('C'. $iteration)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('E06666');
+            }
+
+            $sheet->setCellValue('D'. $iteration, 'Состояние');
+            $sheet->setCellValue('D'. ($iteration + 1), 'Рекомендации');
+            $sheet->setCellValue('E'. $iteration, $v['situation']);
+            $sheet->setCellValue('E'. ($iteration + 1), $v['recommendation']);
+
+
+            //Объединение колонок
+            $spreadsheet->getActiveSheet()->mergeCells('A'.$iteration.':A'.($iteration + 1));
+            $spreadsheet->getActiveSheet()->mergeCells('B'.$iteration.':B'.($iteration + 1));
+            $spreadsheet->getActiveSheet()->mergeCells('C'.$iteration.':C'.($iteration + 1));
+
+            //Задаем цвет разделительного блока
+            $sheet->getStyle('A'.($iteration + 2).':E'.($iteration + 2))->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('EFEFEF');
+            $iteration += 3;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($path.$file);
+
+        return $file;
     }
 
     /**
@@ -115,7 +208,7 @@ class IndexController extends ControllerBase
                 }else{
                     $this->answer_array[3]['status'] = 'error';
                     $this->answer_array[3]['situation'] = 'В файле прописано несколько директив Host';
-                    $this->answer_array[3]['recommendation'] = 'Программист: Директива Host должна быть указана в файле только 1 раз. Необходимо удалить все дополнительные директивы Host и оставить только 1, корректную и соответствующую основному зеркалу сайта';
+                    $this->answer_array[3]['recommendation'] = 'Программист: Директива Host должна быть указана в файле толоко 1 раз. Необходимо удалить все дополнительные директивы Host и оставить только 1, корректную и соответствующую основному зеркалу сайта';
                 }
                 break;
             case 4:

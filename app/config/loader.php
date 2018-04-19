@@ -1,5 +1,7 @@
 <?php
 
+require  APP_PATH .'/../vendor/autoload.php';
+
 $loader = new \Phalcon\Loader();
 
 /**

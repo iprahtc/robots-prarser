@@ -4,6 +4,9 @@
         <input type="text" name="url" id="url">
         <input type="submit">
     </form>
+    {% if not(file_name is empty)%}
+        <a href="/download?file_name={{ file_name }}">Скачать файл</a>
+    {% endif %}
 </div>
 {% if not(answer_array is empty)%}
     <table class="table table-bordered">
@@ -12,7 +15,7 @@
                 <th>№</th>
                 <th>Название проверки</th>
                 <th>Статус</th>
-                <th>План</th>
+                <th></th>
                 <th>Текущее состояние</th>
             </tr>
         </thead>
@@ -37,4 +40,3 @@
         </tbody>
     </table>
 {% endif %}
-{{ dump(test) }}

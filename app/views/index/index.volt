@@ -2,12 +2,15 @@
     <h3>Введите url сайта</h3>
     <form method="post">
         <input type="text" name="url" id="url">
-        <input type="submit">
+        <input type="submit" value="Проверить">
     </form>
     {% if not(file_name is empty)%}
-        <a href="/download?file_name={{ file_name }}">Скачать файл</a>
+        Ссылка на скачивание <a href="/download?file_name={{ file_name }}">{{ site_name }}/download?file_name={{ file_name }}</a>
     {% endif %}
 </div>
+{% if not(site_parse is empty)%}
+    <h3>Адрес ресурса {{ site_parse }}</h3>
+{% endif %}
 {% if not(answer_array is empty)%}
     <table class="table table-bordered">
         <thead>

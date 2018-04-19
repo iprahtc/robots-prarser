@@ -23,7 +23,7 @@ class DownloadController extends \Phalcon\Mvc\Controller
             readfile('files/' . $this->request->get("file_name"));
 
             //Удаляем файл
-            unlink('files/' . $this->request->get("file_name"));
+            //unlink('files/' . $this->request->get("file_name"));
             exit;
         }
         else

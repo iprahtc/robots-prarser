@@ -15,9 +15,16 @@ class IndexController extends ControllerBase
 
     public function indexAction()
     {
-        if ($this->request->isPost()) {
+        if (!empty($this->request->getPost("url"))) {
+            $url_site_parse = parse_url($this->request->getPost("url"));
+            if(!empty($url_site_parse['host']))
+                $url = $url_site_parse['host'];
+            else
+                $url = $url_site_parse['path'];
 
-            $url = $this->request->getPost("url");
+            $this->view->site_parse = $url;
+
+            $url = $url. '/robots.txt';
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -79,6 +86,7 @@ class IndexController extends ControllerBase
 
             //Формируем и сохраняем файл
             $this->view->file_name = $this->buildXLSX($this->answer_array);
+            $this->view->site_name = $_SERVER['SERVER_NAME'];
         }
     }
 

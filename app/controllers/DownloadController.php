@@ -27,7 +27,7 @@ class DownloadController extends \Phalcon\Mvc\Controller
             exit;
         }
         else
-            die("<h2>Вы перешли не поссылке скачивания</h2>");
+            die("<h2>Вы перешли не по ссылке скачивания</h2>");
     }
 
 }
